@@ -5,7 +5,6 @@ class Queue {
     this.concurrency = concurrency;
     this.count = 0;
     this.waiting = [];
-    this.waitingStart = [];
     this.onProcess = null;
     this.onDone = null;
     this.onSuccess = null;
@@ -31,8 +30,7 @@ class Queue {
       this.next(task);
       return;
     }
-    this.waiting.push(task);
-    this.waitingStart.push(Date.now());
+    this.waiting.push({ task, start: Date.now() });
   }
   next(task) {
     this.count++;
@@ -54,9 +52,8 @@ class Queue {
     onProcess(task, finish);
   }
   takeNext() {
-    const { waiting, waitingStart, waitTimeout } = this;
-    const task = waiting.shift();
-    const start = waitingStart.shift();
+    const { waiting, waitTimeout } = this;
+    const { task, start } = waiting.shift();
     if (waitTimeout !== Infinity) {
       const delay = Date.now() - start;
       if (delay > waitTimeout) {
