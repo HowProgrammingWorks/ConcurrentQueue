@@ -73,7 +73,11 @@ const job = (task, next) => {
 
 const queue = Queue.channels(3)
   .process(job)
-  .done((err, res) => console.log(`Done: ${res.name}`))
+  .done((err, res) => {
+    const { count } = queue;
+    const waiting = queue.waiting.length;
+    console.log(`Done: ${res.name}, count:${count}, waiting: ${waiting}`);
+  })
   .success(res => console.log(`Success: ${res.name}`))
   .failure(err => console.log(`Failure: ${err}`))
   .drain(() => console.log('Queue drain'));

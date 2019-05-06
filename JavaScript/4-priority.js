@@ -129,21 +129,15 @@ class Queue {
 // Usage
 
 const job = (task, next) => {
-  console.log(`Process: ${task.name}`);
-  setTimeout(next, task.interval, null, task).unref();
+  setTimeout(next, task.interval, null, task);
 };
 
 const queue = Queue.channels(3)
-  .wait(4000)
-  .timeout(5000)
   .process(job)
   .priority()
   .done((err, task) => console.log(`Done: ${task.name}`))
-  .success(task => console.log(`Success: ${task.name}`))
-  .failure((err, task) => console.log(`Failure: ${err} ${task.name}`))
   .drain(() => console.log('Queue drain'));
 
 for (let i = 0; i < 10; i++) {
-  const interval = (10 - i) * 1000;
-  queue.add({ name: `Task${i}`, interval }, i);
+  queue.add({ name: `Task${i}`, interval: 1000 }, i);
 }
