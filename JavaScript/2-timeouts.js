@@ -46,8 +46,11 @@ class Queue {
       if (this.waiting.length > 0) this.takeNext();
     };
     if (processTimeout !== Infinity) {
-      const err = new Error('Process timed out');
-      timer = setTimeout(finish, processTimeout, err, task);
+      timer = setTimeout(() => {
+        timer = null;
+        const err = new Error('Process timed out');
+        finish(err, task);
+      }, processTimeout);
     }
     onProcess(task, finish);
   }
