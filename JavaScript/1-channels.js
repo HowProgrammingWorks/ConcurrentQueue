@@ -1,8 +1,8 @@
 'use strict';
 
-class Queue {
-  constructor(concurrency) {
-    this.concurrency = concurrency;
+class QueueFactory {
+  constructor() {
+    this.concurrency = 0;
     this.count = 0;
     this.waiting = [];
     this.onProcess = null;
@@ -11,8 +11,43 @@ class Queue {
     this.onFailure = null;
     this.onDrain = null;
   }
-  static channels(concurrency) {
-    return new Queue(concurrency);
+  static init() {
+    return new QueueFactory();
+  }
+  build() {
+    return new Queue(this);
+  }
+  channels(concurrency) {
+    this.concurrency = concurrency;
+    return this;
+  }
+  process(listener) {
+    this.onProcess = listener;
+    return this;
+  }
+  done(listener) {
+    this.onDone = listener;
+    return this;
+  }
+  success(listener) {
+    this.onSuccess = listener;
+    return this;
+  }
+  failure(listener) {
+    this.onFailure = listener;
+    return this;
+  }
+  drain(listener) {
+    this.onDrain = listener;
+    return this;
+  }
+}
+
+class Queue {
+  constructor(factoryContext) {
+    this.count = 0;
+    this.waiting = [];
+    Object.assign(this, factoryContext);    
   }
   add(task) {
     const hasChannel = this.count < this.concurrency;
@@ -42,26 +77,6 @@ class Queue {
       }
     });
   }
-  process(listener) {
-    this.onProcess = listener;
-    return this;
-  }
-  done(listener) {
-    this.onDone = listener;
-    return this;
-  }
-  success(listener) {
-    this.onSuccess = listener;
-    return this;
-  }
-  failure(listener) {
-    this.onFailure = listener;
-    return this;
-  }
-  drain(listener) {
-    this.onDrain = listener;
-    return this;
-  }
 }
 
 // Usage
@@ -71,7 +86,8 @@ const job = (task, next) => {
   setTimeout(next, task.interval, null, task);
 };
 
-const queue = Queue.channels(3)
+const queue = QueueFactory.init()
+  .channels(3)
   .process(job)
   .done((err, res) => {
     const { count } = queue;
@@ -80,7 +96,8 @@ const queue = Queue.channels(3)
   })
   .success(res => console.log(`Success: ${res.name}`))
   .failure(err => console.log(`Failure: ${err}`))
-  .drain(() => console.log('Queue drain'));
+  .drain(() => console.log('Queue drain'))
+  .build();
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: i * 1000 });

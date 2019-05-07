@@ -1,21 +1,23 @@
 'use strict';
 
-class Queue {
-  constructor(concurrency) {
-    this.paused = false;
-    this.concurrency = concurrency;
+class QueueFactory {
+  constructor() {
+    this.concurrency = 0;
     this.count = 0;
     this.waiting = [];
+    this.waitTimeout = Infinity;
+    this.processTimeout = Infinity;
     this.onProcess = null;
     this.onDone = null;
     this.onSuccess = null;
     this.onFailure = null;
     this.onDrain = null;
-    this.waitTimeout = Infinity;
-    this.processTimeout = Infinity;
   }
-  static channels(concurrency) {
-    return new Queue(concurrency);
+  static init() {
+    return new QueueFactory();
+  }
+  build() {
+    return new Queue(this);
   }
   wait(msec) {
     this.waitTimeout = msec;
@@ -24,6 +26,39 @@ class Queue {
   timeout(msec) {
     this.processTimeout = msec;
     return this;
+  }
+  channels(concurrency) {
+    this.concurrency = concurrency;
+    return this;
+  }
+  process(listener) {
+    this.onProcess = listener;
+    return this;
+  }
+  done(listener) {
+    this.onDone = listener;
+    return this;
+  }
+  success(listener) {
+    this.onSuccess = listener;
+    return this;
+  }
+  failure(listener) {
+    this.onFailure = listener;
+    return this;
+  }
+  drain(listener) {
+    this.onDrain = listener;
+    return this;
+  }
+}
+
+class Queue {
+  constructor(factoryContext) {
+    this.paused = false;
+    this.count = 0;
+    this.waiting = [];
+    Object.assign(this, factoryContext);    
   }
   add(task) {
     if (!this.paused) {
@@ -84,26 +119,6 @@ class Queue {
     if (onDone) onDone(err, res);
     if (this.count === 0 && onDrain) onDrain();
   }
-  process(listener) {
-    this.onProcess = listener;
-    return this;
-  }
-  done(listener) {
-    this.onDone = listener;
-    return this;
-  }
-  success(listener) {
-    this.onSuccess = listener;
-    return this;
-  }
-  failure(listener) {
-    this.onFailure = listener;
-    return this;
-  }
-  drain(listener) {
-    this.onDrain = listener;
-    return this;
-  }
   pause() {
     this.paused = true;
     return this;
@@ -124,12 +139,14 @@ const job = (task, next) => {
   setTimeout(next, task.interval, null, task);
 };
 
-const queue = Queue.channels(3)
+const queue = QueueFactory.init()
+  .channels(3)
   .wait(4000)
   .timeout(5000)
   .process(job)
   .success(task => console.log(`Success: ${task.name}`))
   .failure((err, task) => console.log(`Failure: ${err} ${task.name}`))
+  .build()
   .pause();
 
 for (let i = 0; i < 10; i++) {

@@ -1,23 +1,29 @@
 'use strict';
 
-class Queue {
-  constructor(concurrency) {
-    this.paused = false;
-    this.concurrency = concurrency;
+class QueueFactory {
+  constructor() {
+    this.concurrency = 0;
     this.count = 0;
     this.waiting = [];
+    this.priorityMode = false;
+    this.waitTimeout = Infinity;
+    this.processTimeout = Infinity;
+    this.destination = null;
     this.onProcess = null;
     this.onDone = null;
     this.onSuccess = null;
     this.onFailure = null;
     this.onDrain = null;
-    this.waitTimeout = Infinity;
-    this.processTimeout = Infinity;
-    this.priorityMode = false;
-    this.destination = null;
   }
-  static channels(concurrency) {
-    return new Queue(concurrency);
+  static init() {
+    return new QueueFactory();
+  }
+  build() {
+    return new Queue(this);
+  }
+  priority(flag = true) {
+    this.priorityMode = flag;
+    return this;
   }
   wait(msec) {
     this.waitTimeout = msec;
@@ -26,6 +32,40 @@ class Queue {
   timeout(msec) {
     this.processTimeout = msec;
     return this;
+  }
+  channels(concurrency) {
+    this.concurrency = concurrency;
+    return this;
+  }
+  process(listener) {
+    this.onProcess = listener;
+    return this;
+  }
+  done(listener) {
+    this.onDone = listener;
+    return this;
+  }
+  success(listener) {
+    this.onSuccess = listener;
+    return this;
+  }
+  failure(listener) {
+    this.onFailure = listener;
+    return this;
+  }
+  drain(listener) {
+    this.onDrain = listener;
+    return this;
+  }
+}
+
+class Queue {
+  constructor(factoryContext) {
+    this.paused = false;
+    this.count = 0;
+    this.waiting = [];
+    this.destination = null;
+    Object.assign(this, factoryContext);
   }
   add(task, priority = 0) {
     if (!this.paused) {
@@ -90,26 +130,6 @@ class Queue {
     if (onDone) onDone(err, res);
     if (this.count === 0 && onDrain) onDrain();
   }
-  process(listener) {
-    this.onProcess = listener;
-    return this;
-  }
-  done(listener) {
-    this.onDone = listener;
-    return this;
-  }
-  success(listener) {
-    this.onSuccess = listener;
-    return this;
-  }
-  failure(listener) {
-    this.onFailure = listener;
-    return this;
-  }
-  drain(listener) {
-    this.onDrain = listener;
-    return this;
-  }
   pause() {
     this.paused = true;
     return this;
@@ -122,10 +142,6 @@ class Queue {
     }
     return this;
   }
-  priority(flag = true) {
-    this.priorityMode = flag;
-    return this;
-  }
   pipe(destination) {
     this.destination = destination;
     return this;
@@ -134,14 +150,18 @@ class Queue {
 
 // Usage
 
-const destination = Queue.channels(2)
+const destination = QueueFactory.init()
+  .channels(2)
   .wait(5000)
   .process((task, next) => next(null, { ...task, processed: true }))
-  .done((err, task) => console.log({ task }));
+  .done((err, task) => console.log({ task }))
+  .build();
 
-const source = Queue.channels(3)
+const source = QueueFactory.init()
+  .channels(3)
   .timeout(4000)
   .process((task, next) => setTimeout(next, task.interval, null, task))
+  .build()
   .pipe(destination);
 
 for (let i = 0; i < 10; i++) {
