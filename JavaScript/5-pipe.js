@@ -117,8 +117,10 @@ class Queue {
   resume() {
     this.paused = false;
     if (this.waiting.length > 0) {
-      const hasChannel = this.count < this.concurrency;
-      if (hasChannel) this.takeNext();
+      const channels = this.concurrency - this.count;
+      for (let i = 0; i < channels; i++) {
+        this.takeNext();
+      }
     }
     return this;
   }
@@ -131,6 +133,5 @@ class Queue {
     return this;
   }
 }
-
 
 module.exports = Queue;
