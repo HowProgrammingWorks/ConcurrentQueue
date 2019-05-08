@@ -69,7 +69,7 @@ class Queue {
         this.finish(err, task);
         if (waiting.length > 0) {
           setTimeout(() => {
-            if (this.paused && waiting.length > 0) this.takeNext();
+            if (!this.paused && waiting.length > 0) this.takeNext();
           }, 0);
         }
         return;
@@ -115,11 +115,13 @@ class Queue {
     return this;
   }
   resume() {
-    this.paused = false;
     if (this.waiting.length > 0) {
-      const hasChannel = this.count < this.concurrency;
-      if (hasChannel) this.takeNext();
+      const channels = this.concurrency - this.count;
+      for (let i = 0; i < channels; i++) {
+        this.takeNext();
+      }
     }
+    this.paused = false;
     return this;
   }
   priority(flag = true) {
