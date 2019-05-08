@@ -132,18 +132,5 @@ class Queue {
   }
 }
 
-// Usage
 
-const destination = Queue.channels(2)
-  .wait(5000)
-  .process((task, next) => next(null, { ...task, processed: true }))
-  .done((err, task) => console.log({ task }));
-
-const source = Queue.channels(3)
-  .timeout(4000)
-  .process((task, next) => setTimeout(next, task.interval, null, task))
-  .pipe(destination);
-
-for (let i = 0; i < 10; i++) {
-  source.add({ name: `Task${i}`, interval: 1000 });
-}
+module.exports = Queue;
