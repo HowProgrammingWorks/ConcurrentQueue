@@ -124,14 +124,13 @@ class Queue {
     return this;
   }
   resume() {
-    this.paused = false;
     if (this.waiting.length > 0) {
       const channels = this.concurrency - this.count;
       for (let i = 0; i < channels; i++) {
         this.takeNext();
       }
-      this.paused = false;
     }
+    this.paused = false;
     return this;
   }
 }
