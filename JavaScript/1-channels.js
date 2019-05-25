@@ -11,9 +11,11 @@ class Queue {
     this.onFailure = null;
     this.onDrain = null;
   }
+
   static channels(concurrency) {
     return new Queue(concurrency);
   }
+
   add(task) {
     const hasChannel = this.count < this.concurrency;
     if (hasChannel) {
@@ -22,6 +24,7 @@ class Queue {
     }
     this.waiting.push(task);
   }
+
   next(task) {
     this.count++;
     this.onProcess(task, (err, result) => {
@@ -42,22 +45,27 @@ class Queue {
       }
     });
   }
+
   process(listener) {
     this.onProcess = listener;
     return this;
   }
+
   done(listener) {
     this.onDone = listener;
     return this;
   }
+
   success(listener) {
     this.onSuccess = listener;
     return this;
   }
+
   failure(listener) {
     this.onFailure = listener;
     return this;
   }
+
   drain(listener) {
     this.onDrain = listener;
     return this;

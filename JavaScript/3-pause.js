@@ -14,17 +14,21 @@ class Queue {
     this.waitTimeout = Infinity;
     this.processTimeout = Infinity;
   }
+
   static channels(concurrency) {
     return new Queue(concurrency);
   }
+
   wait(msec) {
     this.waitTimeout = msec;
     return this;
   }
+
   timeout(msec) {
     this.processTimeout = msec;
     return this;
   }
+
   add(task) {
     if (!this.paused) {
       const hasChannel = this.count < this.concurrency;
@@ -35,6 +39,7 @@ class Queue {
     }
     this.waiting.push({ task, start: Date.now() });
   }
+
   next(task) {
     this.count++;
     let timer = null;
@@ -54,6 +59,7 @@ class Queue {
     }
     onProcess(task, finish);
   }
+
   takeNext() {
     const { waiting, waitTimeout } = this;
     const { task, start } = waiting.shift();
@@ -74,6 +80,7 @@ class Queue {
     if (hasChannel) this.next(task);
     return;
   }
+
   finish(err, res) {
     const { onFailure, onSuccess, onDone, onDrain } = this;
     if (err) {
@@ -84,30 +91,37 @@ class Queue {
     if (onDone) onDone(err, res);
     if (this.count === 0 && onDrain) onDrain();
   }
+
   process(listener) {
     this.onProcess = listener;
     return this;
   }
+
   done(listener) {
     this.onDone = listener;
     return this;
   }
+
   success(listener) {
     this.onSuccess = listener;
     return this;
   }
+
   failure(listener) {
     this.onFailure = listener;
     return this;
   }
+
   drain(listener) {
     this.onDrain = listener;
     return this;
   }
+
   pause() {
     this.paused = true;
     return this;
   }
+
   resume() {
     if (this.waiting.length > 0) {
       const channels = this.concurrency - this.count;
