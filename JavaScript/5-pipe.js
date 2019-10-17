@@ -15,44 +15,55 @@ class QueueFactory {
     this.onFailure = null;
     this.onDrain = null;
   }
+
   static init() {
     return new QueueFactory();
   }
+
   build() {
     return new Queue(this);
   }
+
   priority(flag = true) {
     this.priorityMode = flag;
     return this;
   }
+
   wait(msec) {
     this.waitTimeout = msec;
     return this;
   }
+
   timeout(msec) {
     this.processTimeout = msec;
     return this;
   }
+
   channels(concurrency) {
     this.concurrency = concurrency;
     return this;
   }
+
   process(listener) {
     this.onProcess = listener;
     return this;
   }
+
   done(listener) {
     this.onDone = listener;
     return this;
   }
+
   success(listener) {
     this.onSuccess = listener;
     return this;
   }
+
   failure(listener) {
     this.onFailure = listener;
     return this;
   }
+
   drain(listener) {
     this.onDrain = listener;
     return this;
@@ -65,8 +76,10 @@ class Queue {
     this.count = 0;
     this.waiting = [];
     this.destination = null;
+
     Object.assign(this, factoryContext);
   }
+
   add(task, priority = 0) {
     if (!this.paused) {
       const hasChannel = this.count < this.concurrency;
@@ -75,11 +88,13 @@ class Queue {
         return;
       }
     }
+
     this.waiting.push({ task, start: Date.now(), priority });
     if (this.priorityMode) {
       this.waiting.sort((a, b) => b.priority - a.priority);
     }
   }
+
   next(task) {
     this.count++;
     let timer = null;
@@ -93,15 +108,18 @@ class Queue {
       this.finish(err, res);
       if (!this.paused && this.waiting.length > 0) this.takeNext();
     };
+
     if (processTimeout !== Infinity) {
       const err = new Error('Process timed out');
       timer = setTimeout(finish, processTimeout, err, task);
     }
     onProcess(task, finish);
   }
+
   takeNext() {
     const { waiting, waitTimeout } = this;
     const { task, start } = waiting.shift();
+
     if (waitTimeout !== Infinity) {
       const delay = Date.now() - start;
       if (delay > waitTimeout) {
@@ -115,12 +133,15 @@ class Queue {
         return;
       }
     }
+
     const hasChannel = this.count < this.concurrency;
     if (hasChannel) this.next(task);
     return;
   }
+
   finish(err, res) {
     const { onFailure, onSuccess, onDone, onDrain } = this;
+
     if (err) {
       if (onFailure) onFailure(err, res);
     } else {
@@ -130,10 +151,12 @@ class Queue {
     if (onDone) onDone(err, res);
     if (this.count === 0 && onDrain) onDrain();
   }
+
   pause() {
     this.paused = true;
     return this;
   }
+
   resume() {
     if (this.waiting.length > 0) {
       const channels = this.concurrency - this.count;
@@ -144,6 +167,7 @@ class Queue {
     this.paused = false;
     return this;
   }
+
   pipe(destination) {
     this.destination = destination;
     return this;
@@ -169,3 +193,4 @@ const source = QueueFactory.init()
 for (let i = 0; i < 10; i++) {
   source.add({ name: `Task${i}`, interval: 1000 });
 }
+

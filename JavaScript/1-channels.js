@@ -11,32 +11,40 @@ class QueueFactory {
     this.onFailure = null;
     this.onDrain = null;
   }
+
   static init() {
     return new QueueFactory();
   }
+
   build() {
     return new Queue(this);
   }
+
   channels(concurrency) {
     this.concurrency = concurrency;
     return this;
   }
+
   process(listener) {
     this.onProcess = listener;
     return this;
   }
+
   done(listener) {
     this.onDone = listener;
     return this;
   }
+
   success(listener) {
     this.onSuccess = listener;
     return this;
   }
+
   failure(listener) {
     this.onFailure = listener;
     return this;
   }
+
   drain(listener) {
     this.onDrain = listener;
     return this;
@@ -47,16 +55,20 @@ class Queue {
   constructor(factoryContext) {
     this.count = 0;
     this.waiting = [];
+
     Object.assign(this, factoryContext);    
   }
+
   add(task) {
     const hasChannel = this.count < this.concurrency;
+
     if (hasChannel) {
       this.next(task);
       return;
     }
     this.waiting.push(task);
   }
+
   next(task) {
     this.count++;
     this.onProcess(task, (err, result) => {
@@ -66,9 +78,11 @@ class Queue {
         this.onSuccess(result);
       }
       if (this.onDone) this.onDone(err, result);
+
       this.count--;
       if (this.waiting.length > 0) {
         const task = this.waiting.shift();
+
         this.next(task);
         return;
       }
@@ -102,3 +116,4 @@ const queue = QueueFactory.init()
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: i * 1000 });
 }
+
