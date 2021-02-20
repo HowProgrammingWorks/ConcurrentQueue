@@ -1,8 +1,8 @@
 'use strict';
 
-class Queue {
-  constructor(concurrency) {
-    this.concurrency = concurrency;
+class QueueFactory {
+  constructor() {
+    this.concurrency = 0;
     this.count = 0;
     this.waiting = [];
     this.onProcess = null;
@@ -12,38 +12,17 @@ class Queue {
     this.onDrain = null;
   }
 
-  static channels(concurrency) {
-    return new Queue(concurrency);
+  static init() {
+    return new QueueFactory();
   }
 
-  add(task) {
-    const hasChannel = this.count < this.concurrency;
-    if (hasChannel) {
-      this.next(task);
-      return;
-    }
-    this.waiting.push(task);
+  build() {
+    return new Queue(this);
   }
 
-  next(task) {
-    this.count++;
-    this.onProcess(task, (err, result) => {
-      if (err) {
-        if (this.onFailure) this.onFailure(err);
-      } else if (this.onSuccess) {
-        this.onSuccess(result);
-      }
-      if (this.onDone) this.onDone(err, result);
-      this.count--;
-      if (this.waiting.length > 0) {
-        const task = this.waiting.shift();
-        this.next(task);
-        return;
-      }
-      if (this.count === 0 && this.onDrain) {
-        this.onDrain();
-      }
-    });
+  channels(concurrency) {
+    this.concurrency = concurrency;
+    return this;
   }
 
   process(listener) {
@@ -72,6 +51,48 @@ class Queue {
   }
 }
 
+class Queue {
+  constructor(factoryContext) {
+    this.count = 0;
+    this.waiting = [];
+
+    Object.assign(this, factoryContext);    
+  }
+
+  add(task) {
+    const hasChannel = this.count < this.concurrency;
+
+    if (hasChannel) {
+      this.next(task);
+      return;
+    }
+    this.waiting.push(task);
+  }
+
+  next(task) {
+    this.count++;
+    this.onProcess(task, (err, result) => {
+      if (err) {
+        if (this.onFailure) this.onFailure(err);
+      } else if (this.onSuccess) {
+        this.onSuccess(result);
+      }
+      if (this.onDone) this.onDone(err, result);
+
+      this.count--;
+      if (this.waiting.length > 0) {
+        const task = this.waiting.shift();
+
+        this.next(task);
+        return;
+      }
+      if (this.count === 0 && this.onDrain) {
+        this.onDrain();
+      }
+    });
+  }
+}
+
 // Usage
 
 const job = (task, next) => {
@@ -79,7 +100,8 @@ const job = (task, next) => {
   setTimeout(next, task.interval, null, task);
 };
 
-const queue = Queue.channels(3)
+const queue = QueueFactory.init()
+  .channels(3)
   .process(job)
   .done((err, res) => {
     const { count } = queue;
@@ -88,8 +110,10 @@ const queue = Queue.channels(3)
   })
   .success(res => console.log(`Success: ${res.name}`))
   .failure(err => console.log(`Failure: ${err}`))
-  .drain(() => console.log('Queue drain'));
+  .drain(() => console.log('Queue drain'))
+  .build();
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: i * 1000 });
 }
+
