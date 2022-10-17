@@ -86,8 +86,8 @@ const queue = Queue.channels(3)
     const waiting = queue.waiting.length;
     console.log(`Done: ${res.name}, count:${count}, waiting: ${waiting}`);
   })
-  .success(res => console.log(`Success: ${res.name}`))
-  .failure(err => console.log(`Failure: ${err}`))
+  .success((res) => console.log(`Success: ${res.name}`))
+  .failure((err) => console.log(`Failure: ${err}`))
   .drain(() => console.log('Queue drain'));
 
 for (let i = 0; i < 10; i++) {

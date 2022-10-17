@@ -123,7 +123,7 @@ const queue = Queue.channels(3)
   .wait(4000)
   .timeout(5000)
   .process(job)
-  .success(task => console.log(`Success: ${task.name}`))
+  .success((task) => console.log(`Success: ${task.name}`))
   .failure((err, task) => console.log(`Failure: ${err} ${task.name}`))
   .drain(() => console.log('Queue drain'));
 
