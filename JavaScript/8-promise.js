@@ -1,0 +1,106 @@
+'use strict';
+
+class Queue {
+  constructor(concurrency) {
+    this.concurrency = concurrency;
+    this.count = 0;
+    this.waiting = [];
+    this.promises = [];
+    this.onProcess = null;
+    this.onDone = null;
+    this.onSuccess = null;
+    this.onFailure = null;
+    this.onDrain = null;
+  }
+
+  static channels(concurrency) {
+    return new Queue(concurrency);
+  }
+
+  add(task) {
+    this.waiting.push(task);
+    const hasChannel = this.count < this.concurrency;
+    if (hasChannel) this.next();
+  }
+
+  next() {
+    const emptyChannels =  this.concurrency - this.count;
+    let launchCount = Math.min(emptyChannels, this.waiting.length);
+    while (launchCount-- > 0) {
+      this.count++;
+      const task = this.waiting.shift();
+      this.onProcess(task)
+        .then(
+          (res) => {
+            if (this.onSuccess) this.onSuccess(res);
+            if (this.onDone) this.onDone(null, res);
+          },
+          (err) => {
+            if (this.onFailure) this.onFailure(err);
+            if (this.onDone) this.onDone(err);
+          }
+        )
+        .finally(() => {
+          this.count--;
+          if (this.count === 0 && this.waiting.length === 0) {
+            if (this.onDrain) this.onDrain();
+          }
+          this.next();
+        });
+    }
+  }
+
+  process(listener) {
+    this.onProcess = listener;
+    return this;
+  }
+
+  done(listener) {
+    this.onDone = listener;
+    return this;
+  }
+
+  success(listener) {
+    this.onSuccess = listener;
+    return this;
+  }
+
+  failure(listener) {
+    this.onFailure = listener;
+    return this;
+  }
+
+  drain(listener) {
+    this.onDrain = listener;
+    return this;
+  }
+}
+
+// Usage
+
+const job = ({ name, interval }) =>
+  new Promise((resolve, reject) => {
+    if (interval === 1200) {
+      setTimeout(reject, interval, new Error('Big error!'));
+    } else {
+      setTimeout(resolve, interval, name);
+    }
+  });
+
+const queue = Queue.channels(3)
+  .process(job)
+  .done((err, res) => {
+    const { count } = queue;
+    const waiting = queue.waiting.length;
+    console.log(
+      `Done | res: ${res}, err: ${err}, count:${count}, waiting: ${waiting}`
+    );
+  })
+  // .success((res) => void console.log(`Success: ${res}`))
+  // .failure((err) => void console.log(`Failure: ${err}`))
+  .drain(() => void console.log('Queue drain'));
+
+for (let i = 0; i < 20; i++) {
+  if (i < 10) queue.add({ name: `Task${i}`, interval: 1000 });
+  else queue.add({ name: `Task${i}`, interval: i * 100 });
+}
