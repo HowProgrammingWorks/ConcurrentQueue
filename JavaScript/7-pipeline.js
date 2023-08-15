@@ -3,24 +3,26 @@
 const { Readable, Writable, Transform, pipeline } = require('node:stream');
 
 class QueueStream extends Readable {
-  constructor(concurrent) {
+  constructor(concurrency) {
     super({ objectMode: true });
-    this.concurrent = concurrent;
+    this.concurrency = concurrency;
     this.count = 0;
-    this.queue = [];
+    this.waiting = [];
   }
 
-  static channels(concurrent) {
-    return new QueueStream(concurrent);
+  static channels(concurrency) {
+    return new QueueStream(concurrency);
   }
 
   add(task) {
-    this.queue.push(task);
+    this.waiting.push(task);
   }
 
   _read() {
-    while (this.count < this.concurrent && this.queue.length > 0) {
-      const task = this.queue.shift();
+    const emptyChannels =  this.concurrency - this.count;
+    let launchCount = Math.min(emptyChannels, this.waiting.length);
+    while (launchCount-- > 0) {
+      const task = this.waiting.shift();
       this.count++;
       this.onProcess(task, (err, res) => {
         if (err) this.emit('error', err);
@@ -28,7 +30,7 @@ class QueueStream extends Readable {
         this.count--;
       });
     }
-    if (this.queue.length === 0 && this.count === 0) {
+    if (this.waiting.length === 0 && this.count === 0) {
       this.push(null);
     }
   }
