@@ -44,6 +44,7 @@ class Queue {
           this.count--;
           if (this.count === 0 && this.waiting.length === 0) {
             if (this.onDrain) this.onDrain();
+            return;
           }
           this.next();
         });
