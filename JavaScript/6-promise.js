@@ -46,7 +46,7 @@ class Queue {
     if (err && onFailure) onFailure(err, res);
     else if (onSuccess) onSuccess(res);
     if (onDone) onDone(err, res);
-    if (this.count === 0 && onDrain) onDrain();
+    if (this.count === 0 && this.waiting.length === 0 && onDrain) onDrain();
   }
 
   process(listener) {
