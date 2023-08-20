@@ -5,7 +5,6 @@ class Queue {
     this.concurrency = concurrency;
     this.count = 0;
     this.waiting = [];
-    this.promises = [];
     this.onProcess = null;
     this.onDone = null;
     this.onSuccess = null;
