@@ -5,7 +5,6 @@ class Queue {
     this.concurrency = concurrency;
     this.count = 0;
     this.waiting = [];
-    this.promises = [];
     this.onProcess = null;
     this.onDone = null;
     this.onSuccess = null;
@@ -31,23 +30,22 @@ class Queue {
       const task = this.waiting.shift();
       this.onProcess(task)
         .then(
-          (res) => {
-            if (this.onSuccess) this.onSuccess(res);
-            if (this.onDone) this.onDone(null, res);
-          },
-          (err) => {
-            if (this.onFailure) this.onFailure(err);
-            if (this.onDone) this.onDone(err);
-          }
+          (res) => void this.finish(null, res),
+          (err) => void this.finish(err)
         )
         .finally(() => {
           this.count--;
-          if (this.count === 0 && this.waiting.length === 0) {
-            if (this.onDrain) this.onDrain();
-          }
-          this.next();
+          if (this.waiting.length > 0) this.next();
         });
     }
+  }
+
+  finish(err, res) {
+    const { onFailure, onSuccess, onDone, onDrain } = this;
+    if (err && onFailure) onFailure(err, res);
+    else if (onSuccess) onSuccess(res);
+    if (onDone) onDone(err, res);
+    if (this.count === 0 && this.waiting.length === 0 && onDrain) onDrain();
   }
 
   process(listener) {
