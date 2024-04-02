@@ -34,7 +34,6 @@ class Queue {
           (err) => void this.finish(err)
         )
         .finally(() => {
-          this.count--;
           if (this.waiting.length > 0) this.next();
         });
     }
@@ -45,6 +44,7 @@ class Queue {
     if (err && onFailure) onFailure(err, res);
     else if (onSuccess) onSuccess(res);
     if (onDone) onDone(err, res);
+    this.count--;
     if (this.count === 0 && this.waiting.length === 0 && onDrain) onDrain();
   }
 
