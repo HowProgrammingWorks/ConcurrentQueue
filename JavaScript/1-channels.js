@@ -81,14 +81,21 @@ const job = (task, next) => {
 
 const queue = Queue.channels(3)
   .process(job)
-  .done((err, res) => {
+  .done((error, res) => {
+    if (error) console.log(`Done with error: ${error}`);
     const { count } = queue;
     const waiting = queue.waiting.length;
     console.log(`Done: ${res.name}, count:${count}, waiting: ${waiting}`);
   })
-  .success((res) => console.log(`Success: ${res.name}`))
-  .failure((err) => console.log(`Failure: ${err}`))
-  .drain(() => console.log('Queue drain'));
+  .success((res) => {
+    console.log(`Success: ${res.name}`);
+  })
+  .failure((err) => {
+    console.log(`Failure: ${err}`);
+  })
+  .drain(() => {
+    console.log('Queue drain');
+  });
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: i * 1000 });

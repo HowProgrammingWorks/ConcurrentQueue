@@ -144,8 +144,12 @@ const queue = Queue.channels(3)
   .wait(4000)
   .timeout(5000)
   .process(job)
-  .success((task) => console.log(`Success: ${task.name}`))
-  .failure((err, task) => console.log(`Failure: ${err} ${task.name}`))
+  .success((task) => {
+    console.log(`Success: ${task.name}`);
+  })
+  .failure((error, task) => {
+    console.log(`Failure: ${error} ${task.name}`);
+  })
   .pause();
 
 for (let i = 0; i < 10; i++) {

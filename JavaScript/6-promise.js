@@ -23,7 +23,7 @@ class Queue {
   }
 
   next() {
-    const emptyChannels =  this.concurrency - this.count;
+    const emptyChannels = this.concurrency - this.count;
     let launchCount = Math.min(emptyChannels, this.waiting.length);
     while (launchCount-- > 0) {
       this.count++;
@@ -31,7 +31,7 @@ class Queue {
       this.onProcess(task)
         .then(
           (res) => void this.finish(null, res),
-          (err) => void this.finish(err)
+          (err) => void this.finish(err),
         )
         .finally(() => {
           this.count--;
@@ -91,7 +91,7 @@ const queue = Queue.channels(3)
     const { count } = queue;
     const waiting = queue.waiting.length;
     console.log(
-      `Done | res: ${res}, err: ${err}, count:${count}, waiting: ${waiting}`
+      `Done | res: ${res}, err: ${err}, count:${count}, waiting: ${waiting}`,
     );
   })
   // .success((res) => void console.log(`Success: ${res}`))

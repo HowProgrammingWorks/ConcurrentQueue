@@ -152,8 +152,13 @@ const job = (task, next) => {
 const queue = Queue.channels(3)
   .process(job)
   .priority()
-  .done((err, task) => console.log(`Done: ${task.name}`))
-  .drain(() => console.log('Queue drain'));
+  .done((error, task) => {
+    if (error) console.error(error);
+    console.log(`Done: ${task.name}`);
+  })
+  .drain(() => {
+    console.log('Queue drain');
+  });
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: 1000 }, i);

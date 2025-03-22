@@ -155,7 +155,10 @@ class Queue {
 const destination = Queue.channels(2)
   .wait(5000)
   .process((task, next) => next(null, { ...task, processed: true }))
-  .done((err, task) => console.log({ task }));
+  .done((error, task) => {
+    if (error) console.error(error);
+    console.log({ task });
+  });
 
 const source = Queue.channels(3)
   .timeout(4000)

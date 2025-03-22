@@ -19,7 +19,7 @@ class QueueStream extends Readable {
   }
 
   _read() {
-    const emptyChannels =  this.concurrency - this.count;
+    const emptyChannels = this.concurrency - this.count;
     let launchCount = Math.min(emptyChannels, this.waiting.length);
     while (launchCount-- > 0) {
       this.count++;
