@@ -40,11 +40,11 @@ class Queue {
     }
   }
 
-  finish(err, res) {
+  finish(error, res) {
     const { onFailure, onSuccess, onDone, onDrain } = this;
-    if (err && onFailure) onFailure(err, res);
+    if (error && onFailure) onFailure(error, res);
     else if (onSuccess) onSuccess(res);
-    if (onDone) onDone(err, res);
+    if (onDone) onDone(error, res);
     if (this.count === 0 && this.waiting.length === 0 && onDrain) onDrain();
   }
 
@@ -87,12 +87,11 @@ const job = ({ name, interval }) =>
 
 const queue = Queue.channels(3)
   .process(job)
-  .done((err, res) => {
+  .done((error, res) => {
     const { count } = queue;
     const waiting = queue.waiting.length;
-    console.log(
-      `Done | res: ${res}, err: ${err}, count:${count}, waiting: ${waiting}`,
-    );
+    console.log(`Done | res: ${res}, err: ${error}`);
+    console.log(`     | count: ${count}, waiting: ${waiting}`);
   })
   // .success((res) => void console.log(`Success: ${res}`))
   // .failure((err) => void console.log(`Failure: ${err}`))

@@ -18,22 +18,19 @@ class Queue {
 
   add(task) {
     const hasChannel = this.count < this.concurrency;
-    if (hasChannel) {
-      this.next(task);
-      return;
-    }
+    if (hasChannel) return void this.next(task);
     this.waiting.push(task);
   }
 
   next(task) {
     this.count++;
-    this.onProcess(task, (err, result) => {
-      if (err) {
-        if (this.onFailure) this.onFailure(err);
+    this.onProcess(task, (error, result) => {
+      if (error) {
+        if (this.onFailure) this.onFailure(error);
       } else if (this.onSuccess) {
         this.onSuccess(result);
       }
-      if (this.onDone) this.onDone(err, result);
+      if (this.onDone) this.onDone(error, result);
       this.count--;
       if (this.waiting.length > 0) {
         const task = this.waiting.shift();
@@ -87,15 +84,9 @@ const queue = Queue.channels(3)
     const waiting = queue.waiting.length;
     console.log(`Done: ${res.name}, count:${count}, waiting: ${waiting}`);
   })
-  .success((res) => {
-    console.log(`Success: ${res.name}`);
-  })
-  .failure((err) => {
-    console.log(`Failure: ${err}`);
-  })
-  .drain(() => {
-    console.log('Queue drain');
-  });
+  .success((res) => void console.log(`Success: ${res.name}`))
+  .failure((error) => void console.log(`Failure: ${error}`))
+  .drain(() => void console.log('Queue drain'));
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: i * 1000 });

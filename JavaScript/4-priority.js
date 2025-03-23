@@ -82,7 +82,6 @@ class Queue {
     }
     const hasChannel = this.count < this.concurrency;
     if (hasChannel) this.next(task);
-    return;
   }
 
   finish(err, res) {
@@ -156,9 +155,7 @@ const queue = Queue.channels(3)
     if (error) console.error(error);
     console.log(`Done: ${task.name}`);
   })
-  .drain(() => {
-    console.log('Queue drain');
-  });
+  .drain(() => void console.log('Queue drain'));
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: 1000 }, i);

@@ -24,9 +24,9 @@ class QueueStream extends Readable {
     while (launchCount-- > 0) {
       this.count++;
       const task = this.waiting.shift();
-      this.onProcess(task, (err, res) => {
-        if (err) this.emit('error', err);
-        this.push({ err, res });
+      this.onProcess(task, (error, res) => {
+        if (error) this.emit('error', error);
+        this.push({ error, res });
         this.count--;
       });
     }
@@ -57,6 +57,4 @@ for (let i = 0; i < 20; i++) {
 queue.on('data', (data) => void console.log(data));
 queue.on('end', () => void console.log('Tasks end'));
 queue.on('close', () => void console.log('Stream closed'));
-queue.on('error', (err) => {
-  throw err;
-});
+queue.on('error', (error) => void console.error(error));

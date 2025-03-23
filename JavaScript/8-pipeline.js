@@ -24,9 +24,9 @@ class QueueStream extends Readable {
     while (launchCount-- > 0) {
       const task = this.waiting.shift();
       this.count++;
-      this.onProcess(task, (err, res) => {
-        if (err) this.emit('error', err);
-        this.push({ err, res });
+      this.onProcess(task, (error, res) => {
+        if (error) this.emit('error', error);
+        this.push({ error, res });
         this.count--;
       });
     }
@@ -71,8 +71,8 @@ const job = (task, next) => {
 
 const queue = QueueStream.channels(3).process(job);
 
-pipeline(queue, stringifyStream, fileWStream, (err) => {
-  if (err) throw err;
+pipeline(queue, stringifyStream, fileWStream, (error) => {
+  if (error) throw error;
   console.log('pipeline done');
 });
 

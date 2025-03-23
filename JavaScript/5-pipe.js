@@ -83,7 +83,6 @@ class Queue {
     }
     const hasChannel = this.count < this.concurrency;
     if (hasChannel) this.next(task);
-    return;
   }
 
   finish(err, res) {

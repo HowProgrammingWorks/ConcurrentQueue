@@ -30,10 +30,7 @@ class Queue {
 
   add(task) {
     const hasChannel = this.count < this.concurrency;
-    if (hasChannel) {
-      this.next(task);
-      return;
-    }
+    if (hasChannel) return void this.next(task);
     this.waiting.push({ task, start: Date.now() });
   }
 
@@ -42,19 +39,19 @@ class Queue {
     let timer = null;
     let finished = false;
     const { processTimeout, onProcess } = this;
-    const finish = (err, res) => {
+    const finish = (error, res) => {
       if (finished) return;
       finished = true;
       if (timer) clearTimeout(timer);
       this.count--;
-      this.finish(err, res);
+      this.finish(error, res);
       if (this.waiting.length > 0) this.takeNext();
     };
     if (processTimeout !== Infinity) {
       timer = setTimeout(() => {
         timer = null;
-        const err = new Error('Process timed out');
-        finish(err, task);
+        const error = new Error('Process timed out');
+        finish(error, task);
       }, processTimeout);
     }
     onProcess(task, finish);
@@ -66,24 +63,23 @@ class Queue {
     if (waitTimeout !== Infinity) {
       const delay = Date.now() - start;
       if (delay > waitTimeout) {
-        const err = new Error('Waiting timed out');
-        this.finish(err, task);
+        const error = new Error('Waiting timed out');
+        this.finish(error, task);
         if (waiting.length > 0) this.takeNext();
         return;
       }
     }
     this.next(task);
-    return;
   }
 
-  finish(err, res) {
+  finish(error, res) {
     const { onFailure, onSuccess, onDone, onDrain } = this;
-    if (err) {
-      if (onFailure) onFailure(err, res);
+    if (error) {
+      if (onFailure) onFailure(error, res);
     } else if (onSuccess) {
       onSuccess(res);
     }
-    if (onDone) onDone(err, res);
+    if (onDone) onDone(error, res);
     if (this.count === 0 && onDrain) onDrain();
   }
 
@@ -123,9 +119,9 @@ const queue = Queue.channels(3)
   .wait(4000)
   .timeout(5000)
   .process(job)
-  .success((task) => console.log(`Success: ${task.name}`))
-  .failure((err, task) => console.log(`Failure: ${err} ${task.name}`))
-  .drain(() => console.log('Queue drain'));
+  .success((task) => void console.log(`Success: ${task.name}`))
+  .failure((error, task) => void console.log(`Failure: ${error} ${task.name}`))
+  .drain(() => void console.log('Queue drain'));
 
 for (let i = 0; i < 10; i++) {
   queue.add({ name: `Task${i}`, interval: i * 1000 });
