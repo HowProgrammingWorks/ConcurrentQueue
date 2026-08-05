@@ -52,7 +52,7 @@ const stringifyStream = new Transform({
   writableObjectMode: true,
   write(data, encoding, next) {
     const result = JSON.stringify(data);
-    this.push(result + '\n');
+    this.push(`${result}\n`);
     next();
   },
 });
@@ -77,7 +77,6 @@ pipeline(queue, stringifyStream, fileWStream, (error) => {
 });
 
 queue.pipe(writable);
-// queue.on('data', (data) => void console.log(data));
 
 queue.on('end', () => void console.log('tasks end'));
 queue.on('close', () => void console.log('stream closed'));

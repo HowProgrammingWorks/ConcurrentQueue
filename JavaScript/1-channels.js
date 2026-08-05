@@ -82,7 +82,7 @@ const queue = Queue.channels(3)
     if (error) console.log(`Done with error: ${error}`);
     const { count } = queue;
     const waiting = queue.waiting.length;
-    console.log(`Done: ${res.name}, count:${count}, waiting: ${waiting}`);
+    console.log(`Done: ${res.name}, count: ${count}, waiting: ${waiting}`);
   })
   .success((res) => void console.log(`Success: ${res.name}`))
   .failure((error) => void console.log(`Failure: ${error}`))
