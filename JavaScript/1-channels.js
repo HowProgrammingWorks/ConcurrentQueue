@@ -26,11 +26,11 @@ class Queue {
     this.count++;
     this.onProcess(task, (error, result) => {
       if (error) {
-        if (this.onFailure) this.onFailure(error);
-      } else if (this.onSuccess) {
-        this.onSuccess(result);
+        this.onFailure?.(error);
+      } else {
+        this.onSuccess?.(result);
       }
-      if (this.onDone) this.onDone(error, result);
+      this.onDone?.(error, result);
       this.count--;
       if (this.waiting.length > 0) {
         const task = this.waiting.shift();
